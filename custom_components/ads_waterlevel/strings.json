@@ -62,7 +62,7 @@
       },
       "mapping": {
         "title": "Mapping for {tank}",
-        "description": "Define the voltage-to-volume curve as a JSON list of points, each with v (voltage) and l (liters). Example: [{\"v\": 0.0, \"l\": 0}, {\"v\": 3.3, \"l\": 100}]",
+        "description": "Define the voltage-to-volume curve as a JSON list of points with 'v' (voltage) and 'l' (liters) keys.",
         "data": {
           "mapping_json": "Mapping points (JSON)"
         }
