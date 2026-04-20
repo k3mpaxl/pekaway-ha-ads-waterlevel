@@ -1,0 +1,6 @@
+{
+  "name": "ADS1115 Water Level",
+  "render_readme": true,
+  "homeassistant": "2024.10.0",
+  "hacs": "1.32.0"
+}

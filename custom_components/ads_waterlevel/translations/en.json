@@ -1,0 +1,82 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up ADS Water Level",
+        "description": "Configure the ADS1115 analog-to-digital converter.",
+        "data": {
+          "i2c_bus": "I2C bus number",
+          "i2c_address": "I2C address"
+        },
+        "data_description": {
+          "i2c_bus": "Raspberry Pi I2C bus number, usually 1.",
+          "i2c_address": "ADS1115 I2C address (0x48-0x4B)."
+        }
+      },
+      "tank": {
+        "title": "Add tank",
+        "description": "Configure one tank sensor channel.",
+        "data": {
+          "name": "Tank name",
+          "channel": "Channel (1-4)",
+          "mode": "Mode",
+          "v_max": "Maximum voltage (V)",
+          "invert": "Invert curve",
+          "divider_ratio": "Voltage divider ratio",
+          "r_pullup_ohm": "Pull-up resistor (Ohm)",
+          "v_ref": "Reference voltage (V)"
+        }
+      },
+      "add_another": {
+        "title": "Add another tank?",
+        "data": {
+          "add_another": "Add another tank"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure ADS1115",
+        "data": {
+          "i2c_bus": "I2C bus number",
+          "i2c_address": "I2C address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to reach the ADS1115 at this address.",
+      "unknown": "Unexpected error.",
+      "duplicate_name": "A tank with that name already exists."
+    },
+    "abort": {
+      "already_configured": "Device is already configured",
+      "address_mismatch": "The new I2C address does not match this config entry.",
+      "no_tanks": "No tanks are configured to edit."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Edit tank mapping",
+        "data": {
+          "tank": "Tank"
+        }
+      },
+      "mapping": {
+        "title": "Mapping for {tank}",
+        "description": "Define the voltage-to-volume curve as a JSON list of points, each with v (voltage) and l (liters). Example: [{\"v\": 0.0, \"l\": 0}, {\"v\": 3.3, \"l\": 100}]",
+        "data": {
+          "mapping_json": "Mapping points (JSON)"
+        }
+      }
+    },
+    "error": {
+      "invalid_mapping": "Mapping JSON is invalid. Expecting a list of {v, l} objects."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "voltage": { "name": "Voltage" },
+      "level": { "name": "Level" },
+      "resistance": { "name": "Resistance" }
+    }
+  }
+}

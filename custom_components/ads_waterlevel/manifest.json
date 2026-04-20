@@ -1,0 +1,13 @@
+{
+  "domain": "ads_waterlevel",
+  "name": "ADS1115 Water Level",
+  "version": "2.0.0",
+  "documentation": "https://github.com/k3mpaxl/pekaway-ha-ads-waterlevel",
+  "issue_tracker": "https://github.com/k3mpaxl/pekaway-ha-ads-waterlevel/issues",
+  "codeowners": ["@k3mpaxl"],
+  "config_flow": true,
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "loggers": ["custom_components.ads_waterlevel"],
+  "requirements": ["smbus2>=0.4.2"]
+}
