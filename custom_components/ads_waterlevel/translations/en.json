@@ -69,7 +69,7 @@
       }
     },
     "error": {
-      "invalid_mapping": "Mapping JSON is invalid. Expecting a list of {v, l} objects."
+      "invalid_mapping": "Mapping JSON is invalid. Expecting a list of objects with keys 'v' and 'l'."
     }
   },
   "entity": {
