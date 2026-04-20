@@ -21,7 +21,10 @@ Read water tank levels using an **ADS1115** 4-channel ADC on the I²C bus. Suppo
 | | |
 |---|---|
 | **Hardware** | ADS1115 ADC on I²C bus |
+| **Raspberry Pi** | `dtparam=i2c_vc=on`, `dtparam=i2c_arm=on` and `i2c-dev` module in `config.txt` |
 | **Home Assistant** | ≥ 2024.10 |
+
+> See the [VAN PI CORE setup guide](https://github.com/k3mpaxl/pekaway-vanpi-homeassistant#2-configtxt-anpassen) for detailed `config.txt` and I²C instructions.
 
 ## Installation via HACS
 
