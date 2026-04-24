@@ -69,7 +69,7 @@ Measured points are entered as a **structured list** (the field uses Home Assist
 - `l` — liters
 - `v` — volts
 
-YAML example:
+YAML example (short):
 
 ```yaml
 - l: 13
@@ -92,6 +92,43 @@ JSON equivalent:
   {"l": 100,  "v": 2.263}
 ]
 ```
+
+#### Full real-world example (Pekaway 100 L tank)
+
+A dense calibration table pays off, especially around the quarter, half, and three-quarter marks. Example with 14 measured points:
+
+```yaml
+- l: 13
+  v: 0.319
+- l: 19.5
+  v: 0.717
+- l: 26
+  v: 0.922
+- l: 32.5
+  v: 1.035
+- l: 39
+  v: 1.160
+- l: 45.5
+  v: 1.274
+- l: 52
+  v: 1.387
+- l: 58.5
+  v: 1.490
+- l: 65
+  v: 1.615
+- l: 78
+  v: 1.842
+- l: 84.5
+  v: 1.956
+- l: 91
+  v: 2.081
+- l: 97.5
+  v: 2.217
+- l: 100
+  v: 2.263
+```
+
+#### Rules
 
 - At least **2 points** are required
 - Voltages must be **strictly increasing** (no duplicates)

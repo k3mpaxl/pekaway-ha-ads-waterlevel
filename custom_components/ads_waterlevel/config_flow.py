@@ -336,24 +336,39 @@ def _tank_schema(
                 CONF_TANK_MAPPING,
                 default=mapping_default,
             ): ObjectSelector(),
-            vol.Optional(
-                CONF_TANK_EMPTY_V,
-                default=empty_v,
-            ): NumberSelector(
-                NumberSelectorConfig(
-                    min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
-                )
-            ),
-            vol.Optional(
-                CONF_TANK_FULL_V,
-                default=full_v,
-            ): NumberSelector(
-                NumberSelectorConfig(
-                    min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
-                )
-            ),
         }
     )
+
+    if empty_v is not None:
+        schema[vol.Optional(CONF_TANK_EMPTY_V, default=empty_v)] = (
+            NumberSelector(
+                NumberSelectorConfig(
+                    min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
+                )
+            )
+        )
+    else:
+        schema[vol.Optional(CONF_TANK_EMPTY_V)] = NumberSelector(
+            NumberSelectorConfig(
+                min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
+            )
+        )
+
+    if full_v is not None:
+        schema[vol.Optional(CONF_TANK_FULL_V, default=full_v)] = (
+            NumberSelector(
+                NumberSelectorConfig(
+                    min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
+                )
+            )
+        )
+    else:
+        schema[vol.Optional(CONF_TANK_FULL_V)] = NumberSelector(
+            NumberSelectorConfig(
+                min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
+            )
+        )
+
     return vol.Schema(schema)
 
 
