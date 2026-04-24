@@ -6,6 +6,7 @@ import logging
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 
 from .ads1115 import ADS1115
 from .const import (
@@ -13,6 +14,9 @@ from .const import (
     CONF_I2C_ADDRESS,
     CONF_I2C_BUS,
     DEFAULT_I2C_BUS,
+    DOMAIN,
+    MANUFACTURER,
+    MODEL,
     PLATFORMS,
 )
 from .coordinator import ADSConfigEntry, ADSCoordinator, ADSData
@@ -40,6 +44,15 @@ async def async_setup_entry(
 
     entry.runtime_data = ADSData(driver=driver, coordinator=coordinator)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    device_registry = dr.async_get(hass)
+    device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        manufacturer=MANUFACTURER,
+        model=MODEL,
+        name=f"ADS1115 @ 0x{address:02x}",
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
