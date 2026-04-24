@@ -25,12 +25,12 @@
           "divider_ratio": "Spannungsteiler-Faktor",
           "r_pullup_ohm": "Pull-up-Widerstand (Ohm)",
           "v_ref": "Referenzspannung (V)",
-          "mapping_points": "Messpunkte (Liste aus {l, v})",
+          "mapping_points": "Messpunkte (Liste aus l/v-Einträgen)",
           "empty_voltage": "Leer-Spannung (V, lineare Alternative)",
           "full_voltage": "Voll-Spannung (V, lineare Alternative)"
         },
         "data_description": {
-          "mapping_points": "Optionale benutzerdefinierte Kalibrierung als Liste von Punkten, jeder mit 'l' (Liter) und 'v' (Volt). Beispiel: [{l: 13, v: 0.319}, {l: 100, v: 2.263}]. Leer lassen, wenn die lineare Leer/Voll-Kalibrierung verwendet wird.",
+          "mapping_points": "Optionale benutzerdefinierte Kalibrierung als Liste von Punkten, jeder mit 'l' (Liter) und 'v' (Volt). Beispiel: [l=13 v=0.319, l=100 v=2.263]. Leer lassen, wenn die lineare Leer/Voll-Kalibrierung verwendet wird.",
           "empty_voltage": "Alternative lineare Kalibrierung: Spannung bei leerem Tank (0 L). Nur zusammen mit Voll-Spannung verwenden und Messpunkte leer lassen.",
           "full_voltage": "Alternative lineare Kalibrierung: Spannung bei vollem Tank (100 L). Nur zusammen mit Leer-Spannung verwenden und Messpunkte leer lassen."
         }
@@ -53,7 +53,7 @@
       "cannot_connect": "Der ADS1115 unter dieser Adresse konnte nicht erreicht werden.",
       "unknown": "Unerwarteter Fehler.",
       "duplicate_name": "Ein Tank mit diesem Namen existiert bereits.",
-      "invalid_mapping": "Ungültiges Mapping-Format. Erwartet wird eine Liste aus {l, v}-Einträgen.",
+      "invalid_mapping": "Ungültiges Mapping-Format. Erwartet wird eine Liste aus l/v-Einträgen.",
       "mapping_not_enough_points": "Bitte mindestens 2 Messpunkte angeben.",
       "mapping_duplicate_voltage": "Die Spannungswerte müssen streng ansteigen.",
       "mapping_conflict": "Entweder Messpunkte oder Leer/Voll-Spannung verwenden, nicht beides.",
@@ -85,19 +85,19 @@
           "divider_ratio": "Spannungsteiler-Faktor",
           "r_pullup_ohm": "Pull-up-Widerstand (Ohm)",
           "v_ref": "Referenzspannung (V)",
-          "mapping_points": "Messpunkte (Liste aus {l, v})",
+          "mapping_points": "Messpunkte (Liste aus l/v-Einträgen)",
           "empty_voltage": "Leer-Spannung (V, lineare Alternative)",
           "full_voltage": "Voll-Spannung (V, lineare Alternative)"
         },
         "data_description": {
-          "mapping_points": "Gemessene Kalibrierungswerte als Liste, z.B. [{l: 13, v: 0.319}, {l: 100, v: 2.263}]. Leer lassen, wenn Leer/Voll-Spannung verwendet wird.",
+          "mapping_points": "Gemessene Kalibrierungswerte als Liste, z.B. [l=13 v=0.319, l=100 v=2.263]. Leer lassen, wenn Leer/Voll-Spannung verwendet wird.",
           "empty_voltage": "Spannung bei leerem Tank (0 L) für eine lineare Kalibrierung.",
           "full_voltage": "Spannung bei vollem Tank (100 L) für eine lineare Kalibrierung."
         }
       }
     },
     "error": {
-      "invalid_mapping": "Ungültiges Mapping-Format. Erwartet wird eine Liste aus {l, v}-Einträgen.",
+      "invalid_mapping": "Ungültiges Mapping-Format. Erwartet wird eine Liste aus l/v-Einträgen.",
       "mapping_not_enough_points": "Bitte mindestens 2 Messpunkte angeben.",
       "mapping_duplicate_voltage": "Die Spannungswerte müssen streng ansteigen.",
       "mapping_conflict": "Entweder Messpunkte oder Leer/Voll-Spannung verwenden, nicht beides.",
