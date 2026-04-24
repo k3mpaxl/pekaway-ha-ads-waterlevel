@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any, Self
 
 import voluptuous as vol
@@ -19,6 +18,7 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    ObjectSelector,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -36,7 +36,6 @@ from .const import (
     CONF_TANK_FULL_V,
     CONF_TANK_INVERT,
     CONF_TANK_MAPPING,
-    CONF_TANK_MAPPING_TEXT,
     CONF_TANK_MODE,
     CONF_TANK_NAME,
     CONF_TANK_R_PULLUP,
@@ -62,40 +61,37 @@ def _to_float(value: Any) -> float:
     return float(text)
 
 
-def _parse_mapping_text(mapping_text: str) -> list[dict[str, float]]:
-    """Parse lines in the format 'liters - volts' into mapping dicts."""
-    lines = [
-        line.strip() for line in mapping_text.splitlines() if line.strip()
-    ]
-    if not lines:
+def _parse_mapping_list(
+    raw: Any,
+) -> list[dict[str, float]]:
+    """Validate a raw list of {l, v} dicts from the object selector."""
+    if raw in (None, "", [], {}):
         return []
+    if not isinstance(raw, list):
+        raise ValueError("invalid_mapping")
 
     points: list[dict[str, float]] = []
-    for idx, line in enumerate(lines, start=1):
-        nums = re.findall(r"[-+]?\d+(?:[\.,]\d+)?", line)
-        if len(nums) != 2:
-            raise ValueError(f"line_{idx}")
-
-        liters = _to_float(nums[0])
-        volts = _to_float(nums[1])
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("invalid_mapping")
+        if "l" not in item or "v" not in item:
+            raise ValueError("invalid_mapping")
+        try:
+            liters = _to_float(item["l"])
+            volts = _to_float(item["v"])
+        except (TypeError, ValueError) as err:
+            raise ValueError("invalid_mapping") from err
         points.append({"v": volts, "l": liters})
 
-    points.sort(key=lambda item: item["v"])
     if len(points) < 2:
         raise ValueError("not_enough_points")
 
+    points.sort(key=lambda p: p["v"])
     for i in range(1, len(points)):
         if points[i]["v"] <= points[i - 1]["v"]:
             raise ValueError("duplicate_voltage")
 
     return points
-
-
-def _mapping_to_text(mapping: list[dict[str, Any]] | None) -> str:
-    """Format mapping dicts as human-editable lines 'liters - volts'."""
-    if not mapping:
-        return ""
-    return "\n".join(f"{item['l']} - {item['v']}" for item in mapping)
 
 
 def _mapping_option_key(tank_name: str) -> str:
@@ -132,34 +128,44 @@ def _linear_defaults_from_mapping(
     return by_liters[0.0], by_liters[100.0]
 
 
+def _mapping_default_for_form(
+    mapping: list[dict[str, Any]] | None,
+) -> list[dict[str, float]]:
+    """Return mapping points formatted for the ObjectSelector default."""
+    if not mapping:
+        return []
+    return [
+        {"l": float(item["l"]), "v": float(item["v"])}
+        for item in mapping
+    ]
+
+
 def _parse_mapping_input(
     user_input: dict[str, Any],
     errors: dict[str, str],
 ) -> list[dict[str, float]] | None:
     """Validate mapping-related fields and return mapping points."""
-    mapping_text = str(
-        user_input.get(CONF_TANK_MAPPING_TEXT, "")
-    ).strip()
+    raw_mapping = user_input.get(CONF_TANK_MAPPING)
     empty_v = user_input.get(CONF_TANK_EMPTY_V)
     full_v = user_input.get(CONF_TANK_FULL_V)
 
-    if mapping_text and (empty_v is not None or full_v is not None):
+    has_mapping = bool(raw_mapping)
+
+    if has_mapping and (empty_v is not None or full_v is not None):
         errors["base"] = "mapping_conflict"
         return None
 
-    if mapping_text:
+    if has_mapping:
         try:
-            return _parse_mapping_text(mapping_text)
+            return _parse_mapping_list(raw_mapping)
         except ValueError as err:
             code = str(err)
-            if code.startswith("line_"):
-                errors[CONF_TANK_MAPPING_TEXT] = "invalid_mapping_line"
-            elif code == "not_enough_points":
-                errors[CONF_TANK_MAPPING_TEXT] = "mapping_not_enough_points"
+            if code == "not_enough_points":
+                errors[CONF_TANK_MAPPING] = "mapping_not_enough_points"
             elif code == "duplicate_voltage":
-                errors[CONF_TANK_MAPPING_TEXT] = "mapping_duplicate_voltage"
+                errors[CONF_TANK_MAPPING] = "mapping_duplicate_voltage"
             else:
-                errors[CONF_TANK_MAPPING_TEXT] = "invalid_mapping"
+                errors[CONF_TANK_MAPPING] = "invalid_mapping"
             return None
 
     if empty_v is None and full_v is None:
@@ -186,7 +192,6 @@ def _build_tank_data(
 ) -> dict[str, Any]:
     """Build normalized tank data from form input."""
     tank_data = dict(user_input)
-    tank_data.pop(CONF_TANK_MAPPING_TEXT, None)
     tank_data.pop(CONF_TANK_EMPTY_V, None)
     tank_data.pop(CONF_TANK_FULL_V, None)
     tank_data[CONF_TANK_CHANNEL] = int(user_input[CONF_TANK_CHANNEL])
@@ -268,9 +273,9 @@ def _tank_schema(
     empty_v, full_v = _linear_defaults_from_mapping(
         defaults.get(CONF_TANK_MAPPING)
     )
-    mapping_text_default = ""
+    mapping_default: list[dict[str, float]] = []
     if empty_v is None or full_v is None:
-        mapping_text_default = _mapping_to_text(
+        mapping_default = _mapping_default_for_form(
             defaults.get(CONF_TANK_MAPPING)
         )
 
@@ -328,9 +333,9 @@ def _tank_schema(
                 )
             ),
             vol.Optional(
-                CONF_TANK_MAPPING_TEXT,
-                default=mapping_text_default,
-            ): TextSelector(),
+                CONF_TANK_MAPPING,
+                default=mapping_default,
+            ): ObjectSelector(),
             vol.Optional(
                 CONF_TANK_EMPTY_V,
                 default=empty_v,

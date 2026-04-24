@@ -42,8 +42,8 @@ Read water tank levels using an **ADS1115** 4-channel ADC on the I²C bus. Suppo
 2. Search for **ADS1115 Water Level**
 3. Enter I²C bus and address (default `0x48`)
 4. Configure each tank: name, channel, mode, and mapping curve.
-5. Optional calibration: enter measured points, one per line (example: `13 - 0.319` or `19,5 l - 0.717`).
-6. Alternative: leave points empty and enter **Empty voltage** + **Full voltage** for linear 0-100 L calibration.
+5. Optional calibration: add a list of measured points `{l: liters, v: volts}` (see format below).
+6. Alternative: leave the list empty and enter **Empty voltage** + **Full voltage** for linear 0-100 L calibration.
 
 ### Editing later
 
@@ -64,19 +64,39 @@ The I²C **bus and address** of the ADS1115 are changed via the **Reconfigure** 
 
 ### Calibration format
 
-Use this format in the tank setup or options mapping editor:
+Measured points are entered as a **structured list** (the field uses Home Assistant's built-in YAML/JSON editor — the same component used in the automation UI, so it stays responsive with any number of points). Each entry has two keys:
 
-```text
-13 l - 0.319
-19,5 l - 0.717
-26 l - 0.922
-...
-100 l - 2.263
+- `l` — liters
+- `v` — volts
+
+YAML example:
+
+```yaml
+- l: 13
+  v: 0.319
+- l: 19.5
+  v: 0.717
+- l: 26
+  v: 0.922
+- l: 100
+  v: 2.263
 ```
 
-- First value: liters
-- Second value: volts
-- Decimal comma and decimal dot are both supported
+JSON equivalent:
+
+```json
+[
+  {"l": 13,   "v": 0.319},
+  {"l": 19.5, "v": 0.717},
+  {"l": 26,   "v": 0.922},
+  {"l": 100,  "v": 2.263}
+]
+```
+
+- At least **2 points** are required
+- Voltages must be **strictly increasing** (no duplicates)
+- Points are sorted automatically by voltage
+- Interpolation between points is piecewise linear; outside the range the nearest value is held
 
 ### Linear empty/full format
 

@@ -25,12 +25,12 @@
           "divider_ratio": "Voltage divider ratio",
           "r_pullup_ohm": "Pull-up resistor (Ohm)",
           "v_ref": "Reference voltage (V)",
-          "mapping_points_text": "Measured points (liters - volts, one per line)",
+          "mapping_points": "Measured points (list of {l, v})",
           "empty_voltage": "Empty voltage (V, linear alternative)",
           "full_voltage": "Full voltage (V, linear alternative)"
         },
         "data_description": {
-          "mapping_points_text": "Optional custom calibration with measured values. Format example: '13 - 0.319' or '19,5 l - 0.717'. Leave empty when using linear empty/full calibration.",
+          "mapping_points": "Optional custom calibration as a list of points, each with 'l' (liters) and 'v' (volts). Example: [{l: 13, v: 0.319}, {l: 100, v: 2.263}]. Leave empty when using linear empty/full calibration.",
           "empty_voltage": "Alternative linear calibration: voltage at empty tank (0 L). Only use together with full voltage and leave measured points empty.",
           "full_voltage": "Alternative linear calibration: voltage at full tank (100 L). Only use together with empty voltage and leave measured points empty."
         }
@@ -53,8 +53,7 @@
       "cannot_connect": "Unable to reach the ADS1115 at this address.",
       "unknown": "Unexpected error.",
       "duplicate_name": "A tank with that name already exists.",
-      "invalid_mapping": "Invalid mapping format.",
-      "invalid_mapping_line": "One or more lines have an invalid format.",
+      "invalid_mapping": "Invalid mapping format. Expected a list of {l, v} entries.",
       "mapping_not_enough_points": "Please provide at least 2 measurement points.",
       "mapping_duplicate_voltage": "Voltage values must be strictly increasing.",
       "mapping_conflict": "Use either measured points or empty/full voltages, not both.",
@@ -86,20 +85,19 @@
           "divider_ratio": "Voltage divider ratio",
           "r_pullup_ohm": "Pull-up resistor (Ohm)",
           "v_ref": "Reference voltage (V)",
-          "mapping_points_text": "Measured points (liters - volts)",
+          "mapping_points": "Measured points (list of {l, v})",
           "empty_voltage": "Empty voltage (V, linear alternative)",
           "full_voltage": "Full voltage (V, linear alternative)"
         },
         "data_description": {
-          "mapping_points_text": "Measured calibration values. Example: '13 - 0.319'. Leave empty when using empty/full voltage.",
+          "mapping_points": "Measured calibration values as a list, e.g. [{l: 13, v: 0.319}, {l: 100, v: 2.263}]. Leave empty when using empty/full voltage.",
           "empty_voltage": "Voltage at empty tank (0 L) for a linear calibration.",
           "full_voltage": "Voltage at full tank (100 L) for a linear calibration."
         }
       }
     },
     "error": {
-      "invalid_mapping": "Invalid mapping format.",
-      "invalid_mapping_line": "One or more lines have an invalid format.",
+      "invalid_mapping": "Invalid mapping format. Expected a list of {l, v} entries.",
       "mapping_not_enough_points": "Please provide at least 2 measurement points.",
       "mapping_duplicate_voltage": "Voltage values must be strictly increasing.",
       "mapping_conflict": "Use either measured points or empty/full voltages, not both.",
