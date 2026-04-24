@@ -12,7 +12,8 @@ Read water tank levels using an **ADS1115** 4-channel ADC on the I²C bus. Suppo
 
 - Up to **4 channels** (single-ended or differential)
 - Modes: **voltage**, **resistive**, **capacitive**
-- Custom mapping curves (voltage → liters) as JSON
+- Custom mapping curves via measured points (`liters - volts`, one line per point)
+- Alternative linear calibration via **empty voltage** and **full voltage**
 - Pull-up resistor configuration for resistive sensors
 - Full Config Flow UI — no YAML needed
 
@@ -38,6 +39,41 @@ Read water tank levels using an **ADS1115** 4-channel ADC on the I²C bus. Suppo
 2. Search for **ADS1115 Water Level**
 3. Enter I²C bus and address (default `0x48`)
 4. Configure each tank: name, channel, mode, and mapping curve.
+5. Optional calibration: enter measured points, one per line (example: `13 - 0.319` or `19,5 l - 0.717`).
+6. Alternative: leave points empty and enter **Empty voltage** + **Full voltage** for linear 0-100 L calibration.
+
+### Editing later
+
+In the integration options you can now edit each configured tank later, including:
+
+- channel
+- sensor mode
+- voltage divider ratio
+- resistive pull-up settings
+- custom measured-point calibration
+- linear empty/full calibration
+
+### Calibration format
+
+Use this format in the tank setup or options mapping editor:
+
+```text
+13 l - 0.319
+19,5 l - 0.717
+26 l - 0.922
+...
+100 l - 2.263
+```
+
+- First value: liters
+- Second value: volts
+- Decimal comma and decimal dot are both supported
+
+### Linear empty/full format
+
+- Empty voltage = measured voltage when the tank is empty (0 L)
+- Full voltage = measured voltage when the tank is full (100 L)
+- Enter either measured points or empty/full voltages, not both
 
 ## Removal
 

@@ -24,7 +24,15 @@
           "invert": "Invert curve",
           "divider_ratio": "Voltage divider ratio",
           "r_pullup_ohm": "Pull-up resistor (Ohm)",
-          "v_ref": "Reference voltage (V)"
+          "v_ref": "Reference voltage (V)",
+          "mapping_points_text": "Measured points (liters - volts, one per line)",
+          "empty_voltage": "Empty voltage (V, linear alternative)",
+          "full_voltage": "Full voltage (V, linear alternative)"
+        },
+        "data_description": {
+          "mapping_points_text": "Optional custom calibration with measured values. Format example: '13 - 0.319' or '19,5 l - 0.717'. Leave empty when using linear empty/full calibration.",
+          "empty_voltage": "Alternative linear calibration: voltage at empty tank (0 L). Only use together with full voltage and leave measured points empty.",
+          "full_voltage": "Alternative linear calibration: voltage at full tank (100 L). Only use together with empty voltage and leave measured points empty."
         }
       },
       "add_another": {
@@ -44,7 +52,14 @@
     "error": {
       "cannot_connect": "Unable to reach the ADS1115 at this address.",
       "unknown": "Unexpected error.",
-      "duplicate_name": "A tank with that name already exists."
+      "duplicate_name": "A tank with that name already exists.",
+      "invalid_mapping": "Invalid mapping format.",
+      "invalid_mapping_line": "One or more lines have an invalid format.",
+      "mapping_not_enough_points": "Please provide at least 2 measurement points.",
+      "mapping_duplicate_voltage": "Voltage values must be strictly increasing.",
+      "mapping_conflict": "Use either measured points or empty/full voltages, not both.",
+      "mapping_linear_requires_both": "Please provide both empty and full voltage for linear calibration.",
+      "mapping_linear_equal_voltages": "Empty and full voltage must be different."
     },
     "abort": {
       "already_configured": "Device is already configured",
@@ -55,21 +70,41 @@
   "options": {
     "step": {
       "init": {
-        "title": "Edit tank mapping",
+        "title": "Edit tank",
         "data": {
           "tank": "Tank"
         }
       },
-      "mapping": {
-        "title": "Mapping for {tank}",
-        "description": "Define the voltage-to-volume curve as a JSON list of points with 'v' (voltage) and 'l' (liters) keys.",
+      "tank": {
+        "title": "Edit {tank}",
+        "description": "Edit the tank channel, sensor mode, electrical settings, and calibration. Use either measured points or the empty/full voltage fields.",
         "data": {
-          "mapping_json": "Mapping points (JSON)"
+          "channel": "Channel (1-4)",
+          "mode": "Mode",
+          "v_max": "Maximum voltage (V)",
+          "invert": "Invert curve",
+          "divider_ratio": "Voltage divider ratio",
+          "r_pullup_ohm": "Pull-up resistor (Ohm)",
+          "v_ref": "Reference voltage (V)",
+          "mapping_points_text": "Measured points (liters - volts)",
+          "empty_voltage": "Empty voltage (V, linear alternative)",
+          "full_voltage": "Full voltage (V, linear alternative)"
+        },
+        "data_description": {
+          "mapping_points_text": "Measured calibration values. Example: '13 - 0.319'. Leave empty when using empty/full voltage.",
+          "empty_voltage": "Voltage at empty tank (0 L) for a linear calibration.",
+          "full_voltage": "Voltage at full tank (100 L) for a linear calibration."
         }
       }
     },
     "error": {
-      "invalid_mapping": "Mapping JSON is invalid. Expecting a list of objects with keys 'v' and 'l'."
+      "invalid_mapping": "Invalid mapping format.",
+      "invalid_mapping_line": "One or more lines have an invalid format.",
+      "mapping_not_enough_points": "Please provide at least 2 measurement points.",
+      "mapping_duplicate_voltage": "Voltage values must be strictly increasing.",
+      "mapping_conflict": "Use either measured points or empty/full voltages, not both.",
+      "mapping_linear_requires_both": "Please provide both empty and full voltage for linear calibration.",
+      "mapping_linear_equal_voltages": "Empty and full voltage must be different."
     }
   },
   "entity": {

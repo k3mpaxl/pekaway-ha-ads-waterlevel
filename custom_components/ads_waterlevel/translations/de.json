@@ -1,0 +1,117 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "ADS Water Level einrichten",
+        "description": "Den ADS1115 Analog-Digital-Wandler konfigurieren.",
+        "data": {
+          "i2c_bus": "I2C-Busnummer",
+          "i2c_address": "I2C-Adresse"
+        },
+        "data_description": {
+          "i2c_bus": "I2C-Busnummer des Raspberry Pi, normalerweise 1.",
+          "i2c_address": "I2C-Adresse des ADS1115 (0x48-0x4B)."
+        }
+      },
+      "tank": {
+        "title": "Tank hinzufügen",
+        "description": "Einen Tanksensor-Kanal konfigurieren.",
+        "data": {
+          "name": "Tankname",
+          "channel": "Kanal (1-4)",
+          "mode": "Modus",
+          "v_max": "Maximale Spannung (V)",
+          "invert": "Kurve invertieren",
+          "divider_ratio": "Spannungsteiler-Faktor",
+          "r_pullup_ohm": "Pull-up-Widerstand (Ohm)",
+          "v_ref": "Referenzspannung (V)",
+          "mapping_points_text": "Messpunkte (Liter - Volt, eine Zeile pro Punkt)",
+          "empty_voltage": "Leer-Spannung (V, lineare Alternative)",
+          "full_voltage": "Voll-Spannung (V, lineare Alternative)"
+        },
+        "data_description": {
+          "mapping_points_text": "Optionale benutzerdefinierte Kalibrierung mit Messwerten. Format zum Beispiel: '13 - 0.319' oder '19,5 l - 0.717'. Leer lassen, wenn die lineare Leer/Voll-Kalibrierung verwendet wird.",
+          "empty_voltage": "Alternative lineare Kalibrierung: Spannung bei leerem Tank (0 L). Nur zusammen mit Voll-Spannung verwenden und Messpunkte leer lassen.",
+          "full_voltage": "Alternative lineare Kalibrierung: Spannung bei vollem Tank (100 L). Nur zusammen mit Leer-Spannung verwenden und Messpunkte leer lassen."
+        }
+      },
+      "add_another": {
+        "title": "Weiteren Tank hinzufügen?",
+        "data": {
+          "add_another": "Weiteren Tank hinzufügen"
+        }
+      },
+      "reconfigure": {
+        "title": "ADS1115 neu konfigurieren",
+        "data": {
+          "i2c_bus": "I2C-Busnummer",
+          "i2c_address": "I2C-Adresse"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Der ADS1115 unter dieser Adresse konnte nicht erreicht werden.",
+      "unknown": "Unerwarteter Fehler.",
+      "duplicate_name": "Ein Tank mit diesem Namen existiert bereits.",
+      "invalid_mapping": "Ungültiges Mapping-Format.",
+      "invalid_mapping_line": "Eine oder mehrere Zeilen haben ein ungültiges Format.",
+      "mapping_not_enough_points": "Bitte mindestens 2 Messpunkte angeben.",
+      "mapping_duplicate_voltage": "Die Spannungswerte müssen streng ansteigen.",
+      "mapping_conflict": "Entweder Messpunkte oder Leer/Voll-Spannung verwenden, nicht beides.",
+      "mapping_linear_requires_both": "Für die lineare Kalibrierung bitte Leer- und Voll-Spannung angeben.",
+      "mapping_linear_equal_voltages": "Leer- und Voll-Spannung müssen unterschiedlich sein."
+    },
+    "abort": {
+      "already_configured": "Gerät ist bereits konfiguriert",
+      "address_mismatch": "Die neue I2C-Adresse passt nicht zu diesem Konfigurationseintrag.",
+      "no_tanks": "Es sind keine Tanks zum Bearbeiten konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tank bearbeiten",
+        "data": {
+          "tank": "Tank"
+        }
+      },
+      "tank": {
+        "title": "{tank} bearbeiten",
+        "description": "Kanal, Sensormodus, elektrische Einstellungen und Kalibrierung des Tanks bearbeiten. Entweder Messpunkte oder Leer/Voll-Spannung verwenden.",
+        "data": {
+          "channel": "Kanal (1-4)",
+          "mode": "Modus",
+          "v_max": "Maximale Spannung (V)",
+          "invert": "Kurve invertieren",
+          "divider_ratio": "Spannungsteiler-Faktor",
+          "r_pullup_ohm": "Pull-up-Widerstand (Ohm)",
+          "v_ref": "Referenzspannung (V)",
+          "mapping_points_text": "Messpunkte (Liter - Volt)",
+          "empty_voltage": "Leer-Spannung (V, lineare Alternative)",
+          "full_voltage": "Voll-Spannung (V, lineare Alternative)"
+        },
+        "data_description": {
+          "mapping_points_text": "Gemessene Kalibrierungswerte. Beispiel: '13 - 0.319'. Leer lassen, wenn Leer/Voll-Spannung verwendet wird.",
+          "empty_voltage": "Spannung bei leerem Tank (0 L) für eine lineare Kalibrierung.",
+          "full_voltage": "Spannung bei vollem Tank (100 L) für eine lineare Kalibrierung."
+        }
+      }
+    },
+    "error": {
+      "invalid_mapping": "Ungültiges Mapping-Format.",
+      "invalid_mapping_line": "Eine oder mehrere Zeilen haben ein ungültiges Format.",
+      "mapping_not_enough_points": "Bitte mindestens 2 Messpunkte angeben.",
+      "mapping_duplicate_voltage": "Die Spannungswerte müssen streng ansteigen.",
+      "mapping_conflict": "Entweder Messpunkte oder Leer/Voll-Spannung verwenden, nicht beides.",
+      "mapping_linear_requires_both": "Für die lineare Kalibrierung bitte Leer- und Voll-Spannung angeben.",
+      "mapping_linear_equal_voltages": "Leer- und Voll-Spannung müssen unterschiedlich sein."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "voltage": { "name": "Spannung" },
+      "level": { "name": "Füllstand" },
+      "resistance": { "name": "Widerstand" }
+    }
+  }
+}

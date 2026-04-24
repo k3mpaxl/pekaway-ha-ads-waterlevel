@@ -47,6 +47,9 @@ CONF_TANK_DIVIDER_RATIO = "divider_ratio"
 CONF_TANK_R_PULLUP = "r_pullup_ohm"
 CONF_TANK_V_REF = "v_ref"
 CONF_TANK_MAPPING = "mapping_points"
+CONF_TANK_MAPPING_TEXT = "mapping_points_text"
+CONF_TANK_EMPTY_V = "empty_voltage"
+CONF_TANK_FULL_V = "full_voltage"
 
 # Tank operating modes
 MODE_VOLTAGE = "voltage"

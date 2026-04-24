@@ -34,10 +34,16 @@ from .const import (
     MODEL,
 )
 from .coordinator import ADSConfigEntry, ADSCoordinator
-from .mapping import build_linear_mapping, ch_human_to_ain, interp, normalize_mapping_points
+from .mapping import (
+    build_linear_mapping,
+    ch_human_to_ain,
+    interp,
+    normalize_mapping_points,
+)
 
 _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
+TANK_SETTINGS_SUFFIX = "_settings"
 
 
 VOLTAGE_DESCRIPTION = SensorEntityDescription(
@@ -67,7 +73,7 @@ RESISTANCE_DESCRIPTION = SensorEntityDescription(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
+    _hass: HomeAssistant,
     entry: ADSConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
@@ -78,17 +84,27 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
     for tank in tanks:
         name = tank[CONF_TANK_NAME]
-        ain = ch_human_to_ain(tank[CONF_TANK_CHANNEL])
-        v_max = float(tank.get(CONF_TANK_V_MAX, 3.3))
-        invert = bool(tank.get(CONF_TANK_INVERT, False))
-        divider = float(tank.get(CONF_TANK_DIVIDER_RATIO, 1.0))
-        mode = tank.get(CONF_TANK_MODE, "voltage")
+        settings_override = entry.options.get(
+            f"{name}{TANK_SETTINGS_SUFFIX}",
+            {},
+        )
+        tank_config = {**tank, **settings_override}
+
+        ain = ch_human_to_ain(tank_config[CONF_TANK_CHANNEL])
+        v_max = float(tank_config.get(CONF_TANK_V_MAX, 3.3))
+        invert = bool(tank_config.get(CONF_TANK_INVERT, False))
+        divider = float(tank_config.get(CONF_TANK_DIVIDER_RATIO, 1.0))
+        mode = tank_config.get(CONF_TANK_MODE, "voltage")
 
         # Mapping curve (options override data, data falls back to linear)
         option_mapping = entry.options.get(f"{name}_mapping")
-        mapping_items = option_mapping or tank.get(CONF_TANK_MAPPING)
+        mapping_items = option_mapping or tank_config.get(CONF_TANK_MAPPING)
         if mapping_items:
-            mapping = normalize_mapping_points(mapping_items, v_max=v_max, invert=invert)
+            mapping = normalize_mapping_points(
+                mapping_items,
+                v_max=v_max,
+                invert=invert,
+            )
         else:
             mapping = build_linear_mapping(v_max=v_max, invert=invert)
 
@@ -129,8 +145,8 @@ async def async_setup_entry(
                     tank_name=name,
                     ain=ain,
                     divider_ratio=divider,
-                    r_pullup=float(tank.get(CONF_TANK_R_PULLUP, 47000)),
-                    v_ref=float(tank.get(CONF_TANK_V_REF, 3.3)),
+                    r_pullup=float(tank_config.get(CONF_TANK_R_PULLUP, 47000)),
+                    v_ref=float(tank_config.get(CONF_TANK_V_REF, 3.3)),
                     device_info=device_info,
                 )
             )
@@ -160,7 +176,9 @@ class _ADSBase(CoordinatorEntity[ADSCoordinator], SensorEntity):
         self._ain = ain
         self._ratio = divider_ratio
         self._attr_device_info = device_info
-        self._attr_unique_id = f"{entry.entry_id}_{tank_name}_{description.key}"
+        self._attr_unique_id = (
+            f"{entry.entry_id}_{tank_name}_{description.key}"
+        )
 
     def _last_v_in(self) -> float | None:
         """Return the latest input voltage after divider correction."""

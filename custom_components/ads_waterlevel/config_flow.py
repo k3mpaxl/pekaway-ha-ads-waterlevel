@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import logging
-from typing import Any
+import re
+from typing import Any, Self
 
 import voluptuous as vol
 
@@ -32,7 +32,11 @@ from .const import (
     CONF_I2C_BUS,
     CONF_TANK_CHANNEL,
     CONF_TANK_DIVIDER_RATIO,
+    CONF_TANK_EMPTY_V,
+    CONF_TANK_FULL_V,
     CONF_TANK_INVERT,
+    CONF_TANK_MAPPING,
+    CONF_TANK_MAPPING_TEXT,
     CONF_TANK_MODE,
     CONF_TANK_NAME,
     CONF_TANK_R_PULLUP,
@@ -46,6 +50,174 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+TANK_SETTINGS_SUFFIX = "_settings"
+
+
+def _to_float(value: Any) -> float:
+    """Convert a value to float and accept decimal comma."""
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value).strip().replace(",", ".")
+    return float(text)
+
+
+def _parse_mapping_text(mapping_text: str) -> list[dict[str, float]]:
+    """Parse lines in the format 'liters - volts' into mapping dicts."""
+    lines = [
+        line.strip() for line in mapping_text.splitlines() if line.strip()
+    ]
+    if not lines:
+        return []
+
+    points: list[dict[str, float]] = []
+    for idx, line in enumerate(lines, start=1):
+        nums = re.findall(r"[-+]?\d+(?:[\.,]\d+)?", line)
+        if len(nums) != 2:
+            raise ValueError(f"line_{idx}")
+
+        liters = _to_float(nums[0])
+        volts = _to_float(nums[1])
+        points.append({"v": volts, "l": liters})
+
+    points.sort(key=lambda item: item["v"])
+    if len(points) < 2:
+        raise ValueError("not_enough_points")
+
+    for i in range(1, len(points)):
+        if points[i]["v"] <= points[i - 1]["v"]:
+            raise ValueError("duplicate_voltage")
+
+    return points
+
+
+def _mapping_to_text(mapping: list[dict[str, Any]] | None) -> str:
+    """Format mapping dicts as human-editable lines 'liters - volts'."""
+    if not mapping:
+        return ""
+    return "\n".join(f"{item['l']} - {item['v']}" for item in mapping)
+
+
+def _mapping_option_key(tank_name: str) -> str:
+    """Return the option key for a tank mapping override."""
+    return f"{tank_name}_mapping"
+
+
+def _settings_option_key(tank_name: str) -> str:
+    """Return the option key for tank setting overrides."""
+    return f"{tank_name}{TANK_SETTINGS_SUFFIX}"
+
+
+def _linear_mapping_from_empty_full(
+    empty_v: float,
+    full_v: float,
+) -> list[dict[str, float]]:
+    """Create a linear 0..100L mapping from empty/full voltages."""
+    return [
+        {"v": float(empty_v), "l": 0.0},
+        {"v": float(full_v), "l": 100.0},
+    ]
+
+
+def _linear_defaults_from_mapping(
+    mapping: list[dict[str, Any]] | None,
+) -> tuple[float | None, float | None]:
+    """Infer empty/full voltages from a simple 2-point 0..100L mapping."""
+    if not mapping or len(mapping) != 2:
+        return None, None
+
+    by_liters = {float(item["l"]): float(item["v"]) for item in mapping}
+    if 0.0 not in by_liters or 100.0 not in by_liters:
+        return None, None
+    return by_liters[0.0], by_liters[100.0]
+
+
+def _parse_mapping_input(
+    user_input: dict[str, Any],
+    errors: dict[str, str],
+) -> list[dict[str, float]] | None:
+    """Validate mapping-related fields and return mapping points."""
+    mapping_text = str(
+        user_input.get(CONF_TANK_MAPPING_TEXT, "")
+    ).strip()
+    empty_v = user_input.get(CONF_TANK_EMPTY_V)
+    full_v = user_input.get(CONF_TANK_FULL_V)
+
+    if mapping_text and (empty_v is not None or full_v is not None):
+        errors["base"] = "mapping_conflict"
+        return None
+
+    if mapping_text:
+        try:
+            return _parse_mapping_text(mapping_text)
+        except ValueError as err:
+            code = str(err)
+            if code.startswith("line_"):
+                errors[CONF_TANK_MAPPING_TEXT] = "invalid_mapping_line"
+            elif code == "not_enough_points":
+                errors[CONF_TANK_MAPPING_TEXT] = "mapping_not_enough_points"
+            elif code == "duplicate_voltage":
+                errors[CONF_TANK_MAPPING_TEXT] = "mapping_duplicate_voltage"
+            else:
+                errors[CONF_TANK_MAPPING_TEXT] = "invalid_mapping"
+            return None
+
+    if empty_v is None and full_v is None:
+        return []
+
+    if empty_v is None or full_v is None:
+        errors["base"] = "mapping_linear_requires_both"
+        return None
+
+    empty_f = float(empty_v)
+    full_f = float(full_v)
+    if abs(empty_f - full_f) < 1e-6:
+        errors["base"] = "mapping_linear_equal_voltages"
+        return None
+
+    return _linear_mapping_from_empty_full(empty_f, full_f)
+
+
+def _build_tank_data(
+    user_input: dict[str, Any],
+    mapping_points: list[dict[str, float]],
+    *,
+    include_name: bool,
+) -> dict[str, Any]:
+    """Build normalized tank data from form input."""
+    tank_data = dict(user_input)
+    tank_data.pop(CONF_TANK_MAPPING_TEXT, None)
+    tank_data.pop(CONF_TANK_EMPTY_V, None)
+    tank_data.pop(CONF_TANK_FULL_V, None)
+    tank_data[CONF_TANK_CHANNEL] = int(user_input[CONF_TANK_CHANNEL])
+    if include_name:
+        tank_data[CONF_TANK_NAME] = user_input[CONF_TANK_NAME].strip()
+    else:
+        tank_data.pop(CONF_TANK_NAME, None)
+
+    if mapping_points:
+        tank_data[CONF_TANK_MAPPING] = mapping_points
+    else:
+        tank_data.pop(CONF_TANK_MAPPING, None)
+    return tank_data
+
+
+def _effective_tank_config(
+    config_entry: ConfigEntry,
+    tank_name: str,
+) -> dict[str, Any]:
+    """Return tank data merged with options overrides."""
+    tank = next(
+        tank
+        for tank in config_entry.data.get(CONF_TANKS, [])
+        if tank[CONF_TANK_NAME] == tank_name
+    )
+    settings = config_entry.options.get(_settings_option_key(tank_name), {})
+    mapping = config_entry.options.get(_mapping_option_key(tank_name))
+    merged = {**tank, **settings}
+    if mapping is not None:
+        merged[CONF_TANK_MAPPING] = mapping
+    return merged
 
 
 class ADSConnectionError(Exception):
@@ -78,21 +250,45 @@ HUB_SCHEMA = vol.Schema(
 )
 
 
-def _tank_schema(existing: dict[str, Any] | None = None) -> vol.Schema:
+def _tank_schema(
+    existing: dict[str, Any] | None = None,
+    *,
+    include_name: bool = True,
+) -> vol.Schema:
     """Schema for adding or editing a single tank."""
     defaults = existing or {}
-    return vol.Schema(
-        {
+    schema: dict[Any, Any] = {}
+    if include_name:
+        schema[
             vol.Required(
                 CONF_TANK_NAME, default=defaults.get(CONF_TANK_NAME, "")
-            ): TextSelector(),
+            )
+        ] = TextSelector()
+
+    empty_v, full_v = _linear_defaults_from_mapping(
+        defaults.get(CONF_TANK_MAPPING)
+    )
+    mapping_text_default = ""
+    if empty_v is None or full_v is None:
+        mapping_text_default = _mapping_to_text(
+            defaults.get(CONF_TANK_MAPPING)
+        )
+
+    schema.update(
+        {
             vol.Required(
                 CONF_TANK_CHANNEL, default=defaults.get(CONF_TANK_CHANNEL, 1)
             ): NumberSelector(
-                NumberSelectorConfig(min=1, max=4, step=1, mode=NumberSelectorMode.BOX)
+                NumberSelectorConfig(
+                    min=1,
+                    max=4,
+                    step=1,
+                    mode=NumberSelectorMode.BOX,
+                )
             ),
             vol.Required(
-                CONF_TANK_MODE, default=defaults.get(CONF_TANK_MODE, MODE_VOLTAGE)
+                CONF_TANK_MODE,
+                default=defaults.get(CONF_TANK_MODE, MODE_VOLTAGE),
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=TANK_MODES, mode=SelectSelectorMode.DROPDOWN
@@ -117,7 +313,8 @@ def _tank_schema(existing: dict[str, Any] | None = None) -> vol.Schema:
                 )
             ),
             vol.Optional(
-                CONF_TANK_R_PULLUP, default=defaults.get(CONF_TANK_R_PULLUP, 47000)
+                CONF_TANK_R_PULLUP,
+                default=defaults.get(CONF_TANK_R_PULLUP, 47000),
             ): NumberSelector(
                 NumberSelectorConfig(
                     min=100, max=1_000_000, step=1, mode=NumberSelectorMode.BOX
@@ -130,8 +327,29 @@ def _tank_schema(existing: dict[str, Any] | None = None) -> vol.Schema:
                     min=0.5, max=24.0, step=0.01, mode=NumberSelectorMode.BOX
                 )
             ),
+            vol.Optional(
+                CONF_TANK_MAPPING_TEXT,
+                default=mapping_text_default,
+            ): TextSelector(),
+            vol.Optional(
+                CONF_TANK_EMPTY_V,
+                default=empty_v,
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
+                )
+            ),
+            vol.Optional(
+                CONF_TANK_FULL_V,
+                default=full_v,
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=0.0, max=20.0, step=0.001, mode=NumberSelectorMode.BOX
+                )
+            ),
         }
     )
+    return vol.Schema(schema)
 
 
 class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -144,6 +362,13 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._bus_num: int = DEFAULT_I2C_BUS
         self._address: int = ADS_ADDR_DEFAULT
         self._tanks: list[dict[str, Any]] = []
+
+    def is_matching(self, other_flow: Self) -> bool:
+        """Return whether another flow targets the same device."""
+        return (
+            self.unique_id is not None
+            and self.unique_id == other_flow.unique_id
+        )
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -160,9 +385,6 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
                 await _probe_ads(self.hass, bus_num, address)
             except ADSConnectionError:
                 errors["base"] = "cannot_connect"
-            except Exception:
-                _LOGGER.exception("Unexpected probe error")
-                errors["base"] = "unknown"
             else:
                 self._bus_num = bus_num
                 self._address = address
@@ -179,15 +401,19 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             name = user_input[CONF_TANK_NAME].strip()
+            mapping_points: list[dict[str, float]] | None = None
             if any(t[CONF_TANK_NAME] == name for t in self._tanks):
                 errors[CONF_TANK_NAME] = "duplicate_name"
             else:
+                mapping_points = _parse_mapping_input(user_input, errors)
+
+            if not errors and mapping_points is not None:
                 self._tanks.append(
-                    {
-                        **user_input,
-                        CONF_TANK_NAME: name,
-                        CONF_TANK_CHANNEL: int(user_input[CONF_TANK_CHANNEL]),
-                    }
+                    _build_tank_data(
+                        user_input,
+                        mapping_points,
+                        include_name=True,
+                    )
                 )
                 return await self.async_step_add_another()
 
@@ -206,7 +432,9 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="add_another",
-            data_schema=vol.Schema({vol.Required("add_another", default=False): bool}),
+            data_schema=vol.Schema(
+                {vol.Required("add_another", default=False): bool}
+            ),
         )
 
     def _finish(self) -> ConfigFlowResult:
@@ -237,9 +465,6 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
                 await _probe_ads(self.hass, bus_num, address)
             except ADSConnectionError:
                 errors["base"] = "cannot_connect"
-            except Exception:
-                _LOGGER.exception("Unexpected probe error")
-                errors["base"] = "unknown"
             else:
                 return self.async_update_reload_and_abort(
                     entry,
@@ -259,7 +484,10 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
                     ): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
                     vol.Required(
                         CONF_I2C_ADDRESS,
-                        default=entry.data.get(CONF_I2C_ADDRESS, ADS_ADDR_DEFAULT),
+                        default=entry.data.get(
+                            CONF_I2C_ADDRESS,
+                            ADS_ADDR_DEFAULT,
+                        ),
                     ): vol.All(vol.Coerce(int), vol.Range(min=0x48, max=0x4B)),
                 }
             ),
@@ -274,12 +502,16 @@ class ADSWaterLevelConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class ADSOptionsFlow(OptionsFlow):
-    """Options flow: edit per-tank mapping curves."""
+    """Options flow: edit per-tank settings and calibration."""
+
+    def __init__(self) -> None:
+        """Initialize options flow state."""
+        self._selected_tank: str = ""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Pick which tank's mapping to edit."""
+        """Pick which tank to edit."""
         tanks = self.config_entry.data.get(CONF_TANKS, [])
         names = [t[CONF_TANK_NAME] for t in tanks]
         if not names:
@@ -287,7 +519,7 @@ class ADSOptionsFlow(OptionsFlow):
 
         if user_input is not None:
             self._selected_tank = user_input["tank"]
-            return await self.async_step_mapping()
+            return await self.async_step_tank()
 
         return self.async_show_form(
             step_id="init",
@@ -302,40 +534,35 @@ class ADSOptionsFlow(OptionsFlow):
             ),
         )
 
-    async def async_step_mapping(
+    async def async_step_tank(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Edit the mapping curve as JSON list of {v, l} pairs."""
+        """Edit the selected tank settings and calibration."""
         tank_name = self._selected_tank
-        option_key = f"{tank_name}_mapping"
+        mapping_option_key = _mapping_option_key(tank_name)
+        settings_option_key = _settings_option_key(tank_name)
+        current = _effective_tank_config(self.config_entry, tank_name)
 
         errors: dict[str, str] = {}
         if user_input is not None:
-            try:
-                parsed = json.loads(user_input["mapping_json"])
-                if not isinstance(parsed, list):
-                    raise ValueError("mapping must be a JSON list")
-                for item in parsed:
-                    if "v" not in item or "l" not in item:
-                        raise ValueError("each item needs v and l")
-                    float(item["v"])
-                    float(item["l"])
-            except (ValueError, TypeError, json.JSONDecodeError) as err:
-                _LOGGER.warning("Invalid mapping JSON: %s", err)
-                errors["base"] = "invalid_mapping"
-            else:
+            parsed = _parse_mapping_input(user_input, errors)
+            if not errors and parsed is not None:
+                settings = _build_tank_data(
+                    user_input,
+                    [],
+                    include_name=False,
+                )
                 options = dict(self.config_entry.options)
-                options[option_key] = parsed
+                options[settings_option_key] = settings
+                if parsed:
+                    options[mapping_option_key] = parsed
+                else:
+                    options.pop(mapping_option_key, None)
                 return self.async_create_entry(title="", data=options)
 
-        default = json.dumps(
-            self.config_entry.options.get(option_key, []), ensure_ascii=False
-        )
         return self.async_show_form(
-            step_id="mapping",
-            data_schema=vol.Schema(
-                {vol.Required("mapping_json", default=default): TextSelector()}
-            ),
+            step_id="tank",
+            data_schema=_tank_schema(current, include_name=False),
             errors=errors,
             description_placeholders={"tank": tank_name},
         )
