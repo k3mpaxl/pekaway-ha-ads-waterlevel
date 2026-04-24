@@ -10,7 +10,7 @@ from .coordinator import ADSConfigEntry
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ADSConfigEntry
+    _hass: HomeAssistant, entry: ADSConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
     coordinator = entry.runtime_data.coordinator

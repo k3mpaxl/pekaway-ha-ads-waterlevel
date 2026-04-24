@@ -20,7 +20,9 @@ from .coordinator import ADSConfigEntry, ADSCoordinator, ADSData
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ADSConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ADSConfigEntry
+) -> bool:
     """Set up an ADS Water Level config entry."""
     bus_num = entry.data.get(CONF_I2C_BUS, DEFAULT_I2C_BUS)
     address = entry.data.get(CONF_I2C_ADDRESS, ADS_ADDR_DEFAULT)
@@ -43,15 +45,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ADSConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ADSConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: ADSConfigEntry
+) -> bool:
     """Unload a config entry."""
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(
+        entry, PLATFORMS
+    )
     if unload_ok:
         driver = entry.runtime_data.driver
         await hass.async_add_executor_job(driver.close)
     return unload_ok
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ADSConfigEntry) -> None:
+async def async_reload_entry(
+    hass: HomeAssistant, entry: ADSConfigEntry
+) -> None:
     """Reload entry after options changes."""
     await hass.config_entries.async_reload(entry.entry_id)

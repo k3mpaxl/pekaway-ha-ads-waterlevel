@@ -16,6 +16,9 @@ Read water tank levels using an **ADS1115** 4-channel ADC on the I²C bus. Suppo
 - Alternative linear calibration via **empty voltage** and **full voltage**
 - Pull-up resistor configuration for resistive sensors
 - Full Config Flow UI — no YAML needed
+- Editable per-tank Options Flow (channel, mode, electrical parameters, calibration)
+- Fully localized UI in English and German (Deutsch)
+- Automatic reload of the integration when options are saved
 
 ## Prerequisites
 
@@ -44,14 +47,20 @@ Read water tank levels using an **ADS1115** 4-channel ADC on the I²C bus. Suppo
 
 ### Editing later
 
-In the integration options you can now edit each configured tank later, including:
+Via **Settings → Devices & Services → ADS1115 Water Level → Configure** you can pick any configured tank and edit it later. The options flow lets you change:
 
-- channel
-- sensor mode
-- voltage divider ratio
-- resistive pull-up settings
-- custom measured-point calibration
-- linear empty/full calibration
+- Channel (1–4)
+- Sensor mode (`voltage`, `resistive`, `capacitive`)
+- Maximum voltage (`v_max`) and invert flag
+- Voltage divider ratio
+- Pull-up resistor and reference voltage (for `resistive` mode)
+- Calibration — either **measured points** or **empty/full voltage**
+
+Saving options triggers an automatic reload of the integration, so new values take effect immediately without restarting Home Assistant.
+
+> The **tank name** cannot be changed via the options flow (it is the stable identifier for overrides and entity IDs). To rename a tank, remove and re-add the integration.
+
+The I²C **bus and address** of the ADS1115 are changed via the **Reconfigure** entry of the integration, not via options.
 
 ### Calibration format
 
@@ -74,6 +83,18 @@ Use this format in the tank setup or options mapping editor:
 - Empty voltage = measured voltage when the tank is empty (0 L)
 - Full voltage = measured voltage when the tank is full (100 L)
 - Enter either measured points or empty/full voltages, not both
+
+## Entities
+
+For each configured tank the integration creates:
+
+- `sensor.<tank>_voltage` — raw input voltage after divider correction
+- `sensor.<tank>_level` — interpolated tank level in liters
+- `sensor.<tank>_resistance` — computed sensor resistance (only in `resistive` mode, disabled by default)
+
+## Language support
+
+The UI is provided in **English** and **Deutsch** via the standard Home Assistant translation system. No configuration needed — the language follows your Home Assistant profile.
 
 ## Removal
 

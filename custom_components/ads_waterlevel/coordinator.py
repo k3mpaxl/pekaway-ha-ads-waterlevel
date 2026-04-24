@@ -9,7 +9,10 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 
 from .ads1115 import ADS1115
 from .const import (
@@ -57,7 +60,9 @@ class ADSCoordinator(DataUpdateCoordinator[dict[int, float | None]]):
 
     def _channels_to_read(self) -> set[int]:
         """Derive the AIN set from configured tanks."""
-        tanks: list[dict[str, Any]] = self.config_entry.data.get(CONF_TANKS, [])
+        tanks: list[dict[str, Any]] = self.config_entry.data.get(
+            CONF_TANKS, []
+        )
         ains: set[int] = set()
         for t in tanks:
             ains.add(ch_human_to_ain(t[CONF_TANK_CHANNEL]))
